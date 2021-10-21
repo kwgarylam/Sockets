@@ -1,13 +1,16 @@
 # This code is for the server 
 # Lets import the libraries
 import socket, cv2, threading
+import screeninfo #pip install screeninfo
 
 #
-width = 1920
-height = 1080
+#width = 1920
+#height = 1080
+
+screen_id = 0
+screen = screeninfo.get_monitors()[screen_id]
+width, height = screen.width, screen.height
 dim = (width, height)
-
-
 
 # Socket Create
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -34,6 +37,7 @@ def show_client(addr, client_socket):
     waiting = True
     frameCounter = 1
     fps = 20
+    window_name = 'Vid'
 
     if client_socket: # if a client socket exists
         while True:
@@ -44,9 +48,10 @@ def show_client(addr, client_socket):
 
             success, img = cap.read()
             img = cv2.resize(img, (width,height))
-            cv2.namedWindow("Vid")
-            cv2.moveWindow("Vid", 0, 0)
-            cv2.imshow("Vid", img)
+            cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+            cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
+            cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+            cv2.imshow(window_name, img)
             cv2.waitKey(fps)
             #print("Video~~~~~~~~~~~~~")
             while waiting:
