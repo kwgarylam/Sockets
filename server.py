@@ -6,7 +6,7 @@ import screeninfo #pip install screeninfo
 #
 #width = 1920
 #height = 1080
-
+cap = cv2.VideoCapture('mon1.mp4')
 screen_id = 0
 screen = screeninfo.get_monitors()[screen_id]
 width, height = screen.width, screen.height
@@ -28,10 +28,11 @@ server_socket.listen(5)
 print("Server started ...")
 print("LISTENING AT:", socket_address)
 
-cap = cv2.VideoCapture('sampleVideo.mp4')
+
 
 playable = True
 stop = True
+reset = False
 
 def videoPlayback():
     frameCounter = 1
@@ -39,10 +40,21 @@ def videoPlayback():
     window_name = 'Vid'
     global playable
     global stop
+    global reset
+
+    cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+    cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
+    cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     while True:
 
+
         while (playable):
+            if reset:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                frameCounter = 0
+                reset = False
+
             frameCounter += 1
             if cap.get(cv2.CAP_PROP_FRAME_COUNT) == frameCounter:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -50,9 +62,6 @@ def videoPlayback():
 
             success, img = cap.read()
             img = cv2.resize(img, (width, height))
-            cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
-            cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
-            cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             cv2.imshow(window_name, img)
             cv2.waitKey(fps)
             if stop == True:
@@ -64,6 +73,7 @@ def show_client(addr, client_socket):
 
     global playable
     global stop
+    global reset
 
     print('Client {} connected!'.format(addr))
 
@@ -93,6 +103,11 @@ def show_client(addr, client_socket):
                     stop = False
                     playable = True
                     #break
+                elif msg == "2":
+                    print("Reset")
+                    reset = True
+                    playable = True
+                    stop = True
 
                 else:
                     print("Not in the condition ...")
