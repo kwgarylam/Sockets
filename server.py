@@ -30,57 +30,85 @@ print("LISTENING AT:", socket_address)
 
 cap = cv2.VideoCapture('sampleVideo.mp4')
 
-def show_client(addr, client_socket):
+playable = True
+stop = True
 
-    print('Client {} connected!'.format(addr))
-
-    waiting = True
+def videoPlayback():
     frameCounter = 1
     fps = 20
     window_name = 'Vid'
+    global playable
+    global stop
 
-    if client_socket: # if a client socket exists
-        while True:
+    while True:
+
+        while (playable):
             frameCounter += 1
             if cap.get(cv2.CAP_PROP_FRAME_COUNT) == frameCounter:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 frameCounter = 1
 
             success, img = cap.read()
-            img = cv2.resize(img, (width,height))
+            img = cv2.resize(img, (width, height))
             cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
             cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
             cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             cv2.imshow(window_name, img)
             cv2.waitKey(fps)
+            if stop == True:
+                playable = False
+                print("Video Stopped")
+
+
+def show_client(addr, client_socket):
+
+    global playable
+    global stop
+
+    print('Client {} connected!'.format(addr))
+
+    waiting = True
+    #frameCounter = 1
+    #fps = 20
+    #window_name = 'Vid'
+
+    if client_socket: # if a client socket exists
+        while True:
             #print("Video~~~~~~~~~~~~~")
-            while waiting:
-                try:
-                    print("In the loop")
-                    print(bool(client_socket))
+            #videoPlayback()
 
-                    msg = client_socket.recv(16)
-                    msg = msg.decode("utf-8")
-                    print("Msg is: ", msg)
 
-                    if msg == "1":
-                        print("In the condition")
-                        waiting = False
-                        break
+            #while waiting:
+            try:
+                print("In the loop")
+                print(bool(client_socket))
 
-                    else:
-                        print("Not in the condition ...")
+                msg = client_socket.recv(16)
+                msg = msg.decode("utf-8")
+                print("Msg is: ", msg)
 
-                    if not client_socket:
-                        print("client socket closed")
-                        print("Socket", bool(client_socket))
+                if msg == "1":
+                    print("In the condition")
+                    waiting = False
+                    stop = False
+                    playable = True
+                    #break
+
+                else:
+                    print("Not in the condition ...")
+                    stop = True
+                    playable = False
+
+                if not client_socket:
+                    print("client socket closed")
+                    print("Socket", bool(client_socket))
 
 
                     #client_socket.close()
 
-                except Exception as e:
-                    print(f"Client {addr} Disconnected ...")
-                    break
+            except Exception as e:
+                print(f"Client {addr} Disconnected ...")
+                break
 
         client_socket.close()
         print("Client Socket closed ...")
@@ -90,7 +118,11 @@ while True:
     client_socket, addr = server_socket.accept()
     print('GOT CONNECTION FROM:', addr)
     thread = threading.Thread(target=show_client, args=(addr, client_socket))
+    thread_Video = threading.Thread(target=videoPlayback)
+
     thread.start()
+    thread_Video.start()
+
     print("Total clients ", threading.active_count() - 1)
 
 
